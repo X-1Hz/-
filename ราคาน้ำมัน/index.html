@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ราคาน้ำมันวันนี้ 🇹🇭</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="logo-icon">⛽</span>
+        <div>
+          <h1>ราคาน้ำมันวันนี้</h1>
+          <p class="header-sub">Thailand Fuel Price Tracker</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="update-badge">🕐 อัปเดต: <span id="last-updated">กำลังโหลด...</span></span>
+        <button id="btn-refresh" class="source-link refresh-btn" title="โหลดราคาล่าสุดจาก BOI">🔄 รีเฟรช</button>
+        <a href="https://www.eppo.go.th/" target="_blank" rel="noopener" class="source-link">ข้อมูลจาก EPPO ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Quick Stats Bar -->
+    <section class="quick-stats" id="quick-stats">
+      <div class="stat-card" id="stat-gasohol95">
+        <div class="stat-label">⚡ แก๊สโซฮอล์ 95</div>
+        <div class="stat-price" id="stat-gasohol95-price">--</div>
+        <div class="stat-unit">บาท/ลิตร</div>
+      </div>
+      <div class="stat-card" id="stat-gasohol91">
+        <div class="stat-label">🟢 แก๊สโซฮอล์ 91</div>
+        <div class="stat-price" id="stat-gasohol91-price">--</div>
+        <div class="stat-unit">บาท/ลิตร</div>
+      </div>
+      <div class="stat-card" id="stat-e20">
+        <div class="stat-label">🌿 E20</div>
+        <div class="stat-price" id="stat-e20-price">--</div>
+        <div class="stat-unit">บาท/ลิตร</div>
+      </div>
+      <div class="stat-card" id="stat-diesel">
+        <div class="stat-label">🚛 ดีเซล B7</div>
+        <div class="stat-price" id="stat-diesel-price">--</div>
+        <div class="stat-unit">บาท/ลิตร</div>
+      </div>
+    </section>
+
+    <!-- Filter & Search -->
+    <section class="controls">
+      <div class="controls-inner">
+        <div class="fuel-filter">
+          <label class="filter-label">ประเภทน้ำมัน:</label>
+          <div class="filter-tabs" id="fuel-tabs">
+            <button class="tab active" data-fuel="all">ทั้งหมด</button>
+            <button class="tab" data-fuel="gasohol95">แก๊สโซฮอล์ 95</button>
+            <button class="tab" data-fuel="gasohol91">แก๊สโซฮอล์ 91</button>
+            <button class="tab" data-fuel="e20">E20</button>
+            <button class="tab" data-fuel="e85">E85</button>
+            <button class="tab" data-fuel="diesel">ดีเซล B7</button>
+            <button class="tab" data-fuel="premiumDiesel">ดีเซล Premium</button>
+          </div>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-table" title="ตารางเปรียบเทียบ">📊 ตาราง</button>
+          <button class="view-btn" id="btn-cards" title="การ์ดปั้ม">🏪 การ์ด</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table View -->
+    <section class="table-section" id="view-table">
+      <div class="table-wrapper">
+        <table class="price-table" id="price-table">
+          <thead>
+            <tr>
+              <th class="th-brand">ปั้มน้ำมัน</th>
+              <th class="th-fuel" data-fuel="gasohol95">แก๊สโซฮอล์ 95</th>
+              <th class="th-fuel" data-fuel="gasohol91">แก๊สโซฮอล์ 91</th>
+              <th class="th-fuel" data-fuel="e20">E20</th>
+              <th class="th-fuel" data-fuel="e85">E85</th>
+              <th class="th-fuel" data-fuel="diesel">ดีเซล B7</th>
+              <th class="th-fuel" data-fuel="premiumDiesel">ดีเซล Premium</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Card View -->
+    <section class="cards-section hidden" id="view-cards">
+      <div class="cards-grid" id="cards-grid">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- Cheapest Finder -->
+    <section class="cheapest-section">
+      <h2 class="section-title">🏆 ปั้มที่ถูกที่สุดวันนี้</h2>
+      <div class="cheapest-grid" id="cheapest-grid">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- Price History Note -->
+    <section class="info-section">
+      <div class="info-box">
+        <h3>📌 หมายเหตุ</h3>
+        <ul>
+          <li>ราคาน้ำมันเป็นราคาขายปลีกในเขตกรุงเทพฯ และปริมณฑล (บาท/ลิตร)</li>
+          <li>ราคาอาจแตกต่างกันเล็กน้อยในต่างจังหวัด</li>
+          <li>ข้อมูลอ้างอิงจาก <a href="https://www.eppo.go.th/" target="_blank" rel="noopener">สำนักงานนโยบายและแผนพลังงาน (EPPO)</a> และ <a href="https://www.boi.go.th/" target="_blank" rel="noopener">BOI Thailand</a></li>
+          <li>เครื่องหมาย <span class="dash-note">—</span> หมายถึงปั้มนั้นไม่จำหน่ายน้ำมันประเภทนั้น</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>ข้อมูลราคาน้ำมัน ณ วันที่ <span id="footer-date">--</span> · อ้างอิง: EPPO · <a href="https://www.eppo.go.th/" target="_blank" rel="noopener">eppo.go.th</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
