@@ -1,0 +1,17 @@
+[build]
+  # ไฟล์ static ทั้งหมดอยู่ที่ root
+  publish = "."
+  # Netlify จะหา functions ใน folder นี้อัตโนมัติ
+  functions = "netlify/functions"
+
+# Redirect /api/prices → Netlify Function
+[[redirects]]
+  from   = "/api/prices"
+  to     = "/.netlify/functions/prices"
+  status = 200
+
+# Redirect /api/prices/* ด้วย (เผื่อ query string)
+[[redirects]]
+  from   = "/api/prices/*"
+  to     = "/.netlify/functions/prices"
+  status = 200
