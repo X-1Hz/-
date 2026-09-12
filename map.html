@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แผนที่ปั้มน้ำมัน 🇹🇭</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #e8431a;
+      --accent:  #f5a623;
+      --dark:    #1a1a2e;
+      --font:    'Sarabun', sans-serif;
+      --radius:  10px;
+    }
+
+    html, body { height: 100%; font-family: var(--font); background: #f0f2f5; }
+
+    /* ====== HEADER ====== */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      padding: 0 20px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      color: rgba(255,255,255,.7);
+      font-size: .85rem;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,.1); color: #fff; text-decoration: none; }
+    .header-title { display: flex; align-items: center; gap: 10px; }
+    .header-title h1 { font-size: 1.2rem; font-weight: 700; }
+    .header-title span { font-size: 1.6rem; }
+    .station-count {
+      font-size: .8rem;
+      background: rgba(255,255,255,.12);
+      padding: 5px 12px;
+      border-radius: 20px;
+      color: rgba(255,255,255,.8);
+    }
+
+    /* ====== FILTER BAR ====== */
+    .filter-bar {
+      position: fixed;
+      top: 58px; left: 0; right: 0;
+      z-index: 999;
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .filter-label { font-size: .8rem; font-weight: 600; color: #374151; white-space: nowrap; }
+    .brand-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1.5px solid #d1d5db;
+      background: #fff;
+      font-family: var(--font);
+      font-size: .78rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .brand-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .brand-btn.active { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .brand-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ====== MAP ====== */
+    #map {
+      position: fixed;
+      top: 106px; left: 0; right: 0; bottom: 0;
+    }
+
+    /* ====== LOADING OVERLAY ====== */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.92);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 1rem; color: #374151; font-weight: 500; }
+    .loading-sub  { font-size: .82rem; color: #6b7280; }
+
+    /* ====== POPUP ====== */
+    .pump-popup { font-family: var(--font); min-width: 200px; }
+    .pump-popup-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .pump-popup-logo {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .pump-popup-name { font-weight: 700; font-size: .95rem; }
+    .pump-popup-brand { font-size: .75rem; color: #6b7280; }
+    .pump-popup-address { font-size: .78rem; color: #6b7280; margin-bottom: 8px; }
+    .pump-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      font-size: .82rem;
+    }
+    .pump-price-label { color: #374151; }
+    .pump-price-val   { font-weight: 700; color: var(--primary); }
+    .pump-price-val.na { color: #d1d5db; font-weight: 400; }
+    .pump-nav-btn {
+      display: block;
+      margin-top: 10px;
+      text-align: center;
+      background: var(--primary);
+      color: #fff;
+      padding: 7px;
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .pump-nav-btn:hover { background: #c23010; text-decoration: none; color: #fff; }
+
+    /* ====== CUSTOM MARKER ====== */
+    .custom-marker {
+      width: 32px; height: 32px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .custom-marker-inner {
+      transform: rotate(45deg);
+      font-size: .85rem;
+      line-height: 1;
+    }
+
+    /* ====== ERROR BOX ====== */
+    #error-box {
+      display: none;
+      position: fixed;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: #fff3f3;
+      border: 1px solid #fcc;
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-size: .85rem;
+      color: #c0392b;
+      z-index: 1500;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+      max-width: 400px;
+      text-align: center;
+    }
+
+    /* ====== LEAFLET OVERRIDES ====== */
+    .leaflet-popup-content-wrapper { border-radius: var(--radius); }
+    .leaflet-popup-content { margin: 12px 14px; }
+
+    @media (max-width: 640px) {
+      .header-inner { padding: 10px 0; }
+      .header-title h1 { font-size: 1rem; }
+      #map { top: 120px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">⛽ กำลังโหลดแผนที่ปั้มน้ำมัน</div>
+    <div class="loading-sub" id="loading-sub">กำลังดึงข้อมูลจาก OpenStreetMap...</div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← ราคาน้ำมัน</a>
+        <div class="header-title">
+          <span>🗺️</span>
+          <h1>แผนที่ปั้มน้ำมัน</h1>
+        </div>
+      </div>
+      <span class="station-count" id="station-count">กำลังโหลด...</span>
+    </div>
+  </header>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-label">แบรนด์:</span>
+    <button class="brand-btn active" data-brand="all">
+      <span>🔍</span> ทั้งหมด
+    </button>
+    <button class="brand-btn" data-brand="ptt">
+      <span class="brand-dot" style="background:#e65100"></span> PTT
+    </button>
+    <button class="brand-btn" data-brand="shell">
+      <span class="brand-dot" style="background:#f57f17"></span> Shell
+    </button>
+    <button class="brand-btn" data-brand="bangchak">
+      <span class="brand-dot" style="background:#2e7d32"></span> บางจาก
+    </button>
+    <button class="brand-btn" data-brand="caltex">
+      <span class="brand-dot" style="background:#c62828"></span> Caltex
+    </button>
+    <button class="brand-btn" data-brand="esso">
+      <span class="brand-dot" style="background:#1565c0"></span> Esso
+    </button>
+    <button class="brand-btn" data-brand="pt">
+      <span class="brand-dot" style="background:#00695c"></span> PT
+    </button>
+    <button class="brand-btn" data-brand="irpc">
+      <span class="brand-dot" style="background:#6a1b9a"></span> IRPC
+    </button>
+    <button class="brand-btn" data-brand="other">
+      <span class="brand-dot" style="background:#546e7a"></span> อื่นๆ
+    </button>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Error box -->
+  <div id="error-box"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>
