@@ -104,7 +104,7 @@ let fuelPrices     = {};   // brandKey → prices object
 // ============================
 function initMap() {
   map = L.map("map", {
-    center: [13.0, 101.0],  // center of Thailand
+    center: [13.7, 100.5],  // กรุงเทพฯ
     zoom: 6,
     zoomControl: true,
   });
@@ -279,32 +279,57 @@ async function fetchFuelPrices() {
 // ============================
 // FETCH STATIONS FROM OVERPASS
 // ============================
+
+// Bounding box ของประเทศไทย (south, west, north, east)
+const THAILAND_BBOX = "5.5,97.3,20.5,105.7";
+
+// Overpass endpoints หลายตัวสำรอง
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
+
 async function fetchStations() {
   setLoadingText("กำลังดึงข้อมูลปั้มน้ำมันจาก OpenStreetMap...");
 
-  // Overpass QL — ดึง node/way/relation ที่มี amenity=fuel ในประเทศไทย
+  // ใช้ bounding box แทน area query — เร็วกว่าและเสถียรกว่า
   const query = `
-    [out:json][timeout:60];
-    area["ISO3166-1"="TH"][admin_level=2]->.th;
-    (
-      node["amenity"="fuel"](area.th);
-      way["amenity"="fuel"](area.th);
-    );
-    out center tags qt;
-  `;
+[out:json][timeout:55][bbox:${THAILAND_BBOX}];
+(
+  node["amenity"="fuel"];
+  way["amenity"="fuel"];
+);
+out center tags qt;
+  `.trim();
 
-  const url = "https://overpass-api.de/api/interpreter";
+  let lastErr = null;
 
-  const response = await fetch(url, {
-    method:  "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body:    "data=" + encodeURIComponent(query),
-  });
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      setLoadingText(`กำลังดึงข้อมูล (${new URL(endpoint).hostname})...`);
+      const response = await fetch(endpoint, {
+        method:  "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body:    "data=" + encodeURIComponent(query),
+        signal:  AbortSignal.timeout(58000),
+      });
 
-  if (!response.ok) throw new Error(`Overpass error: ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-  const data = await response.json();
-  return data.elements || [];
+      const data = await response.json();
+      const elements = data.elements || [];
+
+      if (elements.length === 0) throw new Error("Empty response");
+
+      return elements;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`Overpass endpoint failed (${endpoint}):`, err.message);
+    }
+  }
+
+  throw new Error(`Overpass API ไม่ตอบสนอง: ${lastErr?.message}`);
 }
 
 // ============================
